@@ -10,6 +10,20 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	defaultVersionNumber = 0
+	defaultPackageName   = "sonarqube_client"
+	serviceSuffix        = "Service"
+	requestSuffix        = "Request"
+	responseSuffix       = "Response"
+	urlPrefix            = "api/"
+	fileExt              = ".go"
+	webservicesUrl       = "/api/webservices/list"
+	includeInternalUrl   = "?include_internals=true"
+	serverVersionUrl     = "/api/server/version"
+	defaultVersionString = "0.0"
+)
+
 type version struct {
 	major byte
 	minor byte
@@ -18,8 +32,8 @@ type version struct {
 
 func newVersion(s string) *version {
 	v := &version{}
-	if strings.Trim(s, " ") == "" {
-		s = "0.0"
+	if strings.TrimSpace(s) == "" {
+		s = defaultVersionString
 	}
 	v.UnmarshalJSON([]byte(s))
 	return v
@@ -45,7 +59,7 @@ func (v *version) UnmarshalJSON(raw []byte) error {
 		}
 		v.minor = byte(minor)
 	} else {
-		v.minor = 0
+		v.minor = defaultVersionNumber
 	}
 	return nil
 }
@@ -75,7 +89,7 @@ func (v *version) greater(ov *version) bool {
 }
 
 func (v *version) isSet() bool {
-	return v.major != 0 && v.minor != 0
+	return v.major != defaultVersionNumber && v.minor != defaultVersionNumber
 }
 
 type apiDefinition struct {
@@ -87,7 +101,7 @@ type apiDefinition struct {
 
 func (ad *apiDefinition) ensurePackageName() {
 	if ad.PackageName == "" {
-		ad.PackageName = "sonarqube_client"
+		ad.PackageName = defaultPackageName
 	}
 }
 
@@ -118,7 +132,7 @@ func (ws *webService) Deprecated() bool {
 }
 
 func (ws *webService) ServiceName() string {
-	return ws.Getter() + "Service"
+	return ws.Getter() + serviceSuffix
 }
 
 func (ws *webService) Variable() string {
@@ -126,12 +140,12 @@ func (ws *webService) Variable() string {
 }
 
 func (ws *webService) Getter() string {
-	name := strings.TrimPrefix(ws.Path, "api/")
+	name := strings.TrimPrefix(ws.Path, urlPrefix)
 	return makeExported(snakeToCamel(name))
 }
 
 func (ws *webService) fileName() string {
-	return strings.TrimPrefix(ws.Path, "api/") + ".go"
+	return strings.TrimPrefix(ws.Path, urlPrefix) + fileExt
 }
 
 type action struct {
@@ -152,11 +166,11 @@ func (a *action) MethodName() string {
 }
 
 func (a *action) RequestTypeName() string {
-	return a.ServiceName + a.MethodName() + "Request"
+	return a.ServiceName + a.MethodName() + requestSuffix
 }
 
 func (a *action) ResponseTypeName() string {
-	return a.ServiceName + a.MethodName() + "Response"
+	return a.ServiceName + a.MethodName() + responseSuffix
 }
 
 func (a *action) Deprecated() bool {
@@ -205,24 +219,25 @@ type filter struct {
 }
 
 func url(host string, internal bool) string {
+	link := host + webservicesUrl
 	if internal {
-		return host + "/api/webservices/list?include_internals=true"
+		link += includeInternalUrl
 	}
-	return host + "/api/webservices/list"
+	return link
 }
 
 func getTargetVersion(client *http.Client, host, version string) (string, error) {
 	if version != "" {
 		return version, nil
 	}
-	resp, err := client.Get(host + "/api/server/version")
+	resp, err := client.Get(host + serverVersionUrl)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to fetch server version")
 	}
+	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		return "", errors.Errorf("got error response from the server, code - %d", resp.StatusCode)
 	}
-	defer resp.Body.Close()
 
 	buf := new(bytes.Buffer)
 	_, err = buf.ReadFrom(resp.Body)
@@ -264,7 +279,7 @@ func getDefinition(client *http.Client, host string, internal bool, version *ver
 }
 
 func filterParams(params []*param, f *filter) []*param {
-	result := params[:0]
+	result := make([]*param, 0, len(params))
 	for _, p := range params {
 		if !f.deprecated && p.Deprecated() ||
 			!f.internal && p.Internal ||
@@ -277,7 +292,7 @@ func filterParams(params []*param, f *filter) []*param {
 }
 
 func filterActions(actions []*action, f *filter) []*action {
-	result := actions[:0]
+	result := make([]*action, 0, len(actions))
 	for _, action := range actions {
 
 		if !f.deprecated && action.Deprecated() ||
@@ -286,14 +301,14 @@ func filterActions(actions []*action, f *filter) []*action {
 			continue
 		}
 
-		filterParams(action.Params, f)
+		action.Params = filterParams(action.Params, f)
 		result = append(result, action)
 	}
 	return result
 }
 
 func filterDefinition(def *apiDefinition, f *filter) *apiDefinition {
-	wss := def.WebServices[:0]
+	wss := make([]*webService, 0, len(def.WebServices))
 	for _, ws := range def.WebServices {
 
 		if !f.deprecated && ws.Deprecated() ||
@@ -302,7 +317,7 @@ func filterDefinition(def *apiDefinition, f *filter) *apiDefinition {
 			continue
 		}
 
-		filterActions(ws.Actions, f)
+		ws.Actions = filterActions(ws.Actions, f)
 
 		wss = append(wss, ws)
 	}

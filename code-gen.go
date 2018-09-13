@@ -5,6 +5,10 @@ import (
 	"os"
 )
 
+const (
+	targetDirPermission = 0755
+)
+
 func checkOutput(out string) error {
 	dir, err := os.Open(out)
 	if err != nil {
@@ -37,25 +41,21 @@ func generateCode(def *apiDefinition, out string) error {
 
 	path := out + "/" + def.PackageName
 
-	err := os.MkdirAll(path, 0755)
+	err := os.MkdirAll(path, targetDirPermission)
 	if err != nil {
 		return errors.Wrap(err, "cant create destination directory")
 	}
 
 	//create files for service
 	for _, service := range def.WebServices {
-		file, err := getFileWriter(path, service.fileName())
-		if err != nil {
-			return err
-		}
-		err = renderService(file, service)
-		if err != nil {
+		if err := generateService(path, service); err != nil {
 			return err
 		}
 	}
 
 	// create main client file
 	file, err := getFileWriter(path, clientFileName)
+	defer file.Close()
 	if err != nil {
 		return err
 	}
@@ -64,5 +64,17 @@ func generateCode(def *apiDefinition, out string) error {
 		return err
 	}
 
+	return nil
+}
+func generateService(path string, service *webService) error {
+	file, err := getFileWriter(path, service.fileName())
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	err = renderService(file, service)
+	if err != nil {
+		return err
+	}
 	return nil
 }

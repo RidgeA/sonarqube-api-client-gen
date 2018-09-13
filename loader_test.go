@@ -73,8 +73,9 @@ type actionWith func(*action)
 
 func createAction(options ...actionWith) *action {
 	a := &action{
-		Key:   "normal",
-		Since: *fixtureVersion00,
+		Key:    "normal",
+		Since:  *fixtureVersion00,
+		Params: []*param{},
 	}
 
 	for _, option := range options {
@@ -424,7 +425,6 @@ func Test_filterParams(t *testing.T) {
 func Test_getTargetVersion(t *testing.T) {
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Printf("DEADBEEF loader_test.go:427 - r.URL %v\n", r.URL)
 		switch r.URL.String() {
 		case "/api/server/version":
 			fmt.Fprintf(w, "2.3")
