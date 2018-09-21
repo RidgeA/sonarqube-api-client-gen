@@ -21,18 +21,19 @@ var (
 	packageName   string
 )
 
-func parseFlags() {
-	flag.StringVar(&host, "host", "http://localhost:9000", "SonarQube server")
-	flag.BoolVar(&deprecated, "deprecated", false, "generate code for deprecated api methods (default: false)")
-	flag.BoolVar(&internal, "internal", false, "generate code for internal methods (default: false)")
-	flag.StringVar(&targetVersion, "target", "", "set target api version (default: server's version)")
-	flag.BoolVar(&help, "help", false, "show usage")
-	flag.StringVar(&out, "out", ".", "output directory")
-	flag.StringVar(&packageName, "package", "", "package name, if not set will be sonarqube_client")
-	flag.Parse()
+var mainFlagsSet = flag.NewFlagSet("", flag.PanicOnError)
 
+func parseFlags() {
+	mainFlagsSet.StringVar(&host, "host", "http://localhost:9000", "SonarQube server")
+	mainFlagsSet.BoolVar(&deprecated, "deprecated", false, "generate code for deprecated api methods (default: false)")
+	mainFlagsSet.BoolVar(&internal, "internal", false, "generate code for internal methods (default: false)")
+	mainFlagsSet.StringVar(&targetVersion, "target", "", "set target api version (default: server's version)")
+	mainFlagsSet.BoolVar(&help, "help", false, "show usage")
+	mainFlagsSet.StringVar(&out, "out", ".", "output directory")
+	mainFlagsSet.StringVar(&packageName, "package", "", "package name, if not set will be sonarqube_client")
+	mainFlagsSet.Parse(os.Args[1:])
 	if help {
-		flag.PrintDefaults()
+		mainFlagsSet.Usage()
 		os.Exit(0)
 	}
 }
