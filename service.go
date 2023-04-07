@@ -2,17 +2,16 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"go/format"
 	"io"
 	"log"
 	"text/template"
-
-	"github.com/pkg/errors"
 )
 
 const (
-	serviceTemplateName     = "service.gotxt"
-	serviceTemplateFileName = "./service.gotxt"
+	serviceTemplateName     = "service.tpl"
+	serviceTemplateFileName = "./tpl/service.tpl"
 )
 
 var (
@@ -24,7 +23,7 @@ func renderService(in io.Writer, data *webService) error {
 	buff := bytes.NewBuffer([]byte{})
 
 	if err := serviceTemplate.Execute(buff, data); err != nil {
-		return errors.Wrapf(err, "failed to render service %s", data.ServiceName())
+		return fmt.Errorf("failed to render service %s：%w", data.ServiceName(), err)
 	}
 
 	src := buff.Bytes()

@@ -28,12 +28,17 @@ func sanitizeItentifier(str string) string {
 	return strings.Replace(str, "-", "_", -1)
 }
 
+func formatFieldName(str string) string {
+	return strings.Replace(str, ".", "_", -1)
+}
+
 func tick() string {
 	return "`"
 }
 
 func replaceTags(str string) string {
 	repl := strings.NewReplacer(
+		"\n", "\n// ",
 		"<br> ", "\n// ",
 		"<br>", "\n// ",
 		"<br/>", "\n// ",

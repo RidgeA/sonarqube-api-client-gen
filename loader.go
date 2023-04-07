@@ -3,11 +3,11 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
-
-	"github.com/pkg/errors"
 )
 
 const (
@@ -48,14 +48,14 @@ func (v *version) UnmarshalJSON(raw []byte) error {
 	seg := strings.Split(v.str, ".")
 	major, err := strconv.ParseInt(seg[0], 10, 8)
 	if err != nil {
-		return errors.Wrapf(err, "failed to pars major version, str - %v", v.str)
+		return fmt.Errorf("failed to pars major version, str - %v：%w", v.str, err)
 	}
 	v.major = byte(major)
 
 	if len(seg) >= 2 {
 		minor, err := strconv.ParseInt(seg[1], 10, 8)
 		if err != nil {
-			return errors.Wrapf(err, "failed to pars minor version, str - %v", v.str)
+			return fmt.Errorf("failed to pars minor version, str - %v：%w", v.str, err)
 		}
 		v.minor = byte(minor)
 	} else {
@@ -205,7 +205,7 @@ type param struct {
 }
 
 func (p *param) ParamName() string {
-	return makeExported(snakeToCamel(sanitizeItentifier(p.Key)))
+	return formatFieldName(makeExported(snakeToCamel(sanitizeItentifier(p.Key))))
 }
 
 func (p *param) Deprecated() bool {
@@ -232,27 +232,35 @@ func getTargetVersion(client *http.Client, host, version string) (string, error)
 	}
 	resp, err := client.Get(host + serverVersionUrl)
 	if err != nil {
-		return "", errors.Wrap(err, "failed to fetch server version")
+		return "", fmt.Errorf("failed to fetch server version：%w", err)
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		return "", errors.Errorf("got error response from the server, code - %d", resp.StatusCode)
+		return "", fmt.Errorf("got error response from the server, code - %d：%w", resp.StatusCode, err)
 	}
 
 	buf := new(bytes.Buffer)
 	_, err = buf.ReadFrom(resp.Body)
 	if err != nil {
-		return "", errors.Wrap(err, "failed to read version")
+		return "", fmt.Errorf("failed to fetch server version：%w", err)
 	}
 	version = buf.String()
 
 	return version, nil
 }
 
-func getDefinition(client *http.Client, host string, internal bool, version *version) (*apiDefinition, error) {
-	resp, err := client.Get(url(host, internal))
+func getDefinition(client *http.Client, host string, auth string, internal bool, version *version) (*apiDefinition, error) {
+	req, _ := http.NewRequest("GET", url(host, internal), nil)
+	if auth != "" {
+		req.Header.Set("Authorization", auth)
+	}
+	resp, err := client.Do(req)
+	if resp.StatusCode == 401 {
+		return nil, errors.New("authorization failed to fetch api definitions")
+	}
+	// resp, err := client.Get(url(host, internal))
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to fetch api definitions")
+		return nil, fmt.Errorf("failed to fetch api definitions：%w", err)
 	}
 	defer resp.Body.Close()
 
@@ -264,7 +272,7 @@ func getDefinition(client *http.Client, host string, internal bool, version *ver
 	dec := json.NewDecoder(resp.Body)
 	dec.DisallowUnknownFields()
 	if err := dec.Decode(def); err != nil {
-		return nil, errors.Wrap(err, "failed to decode response")
+		return nil, fmt.Errorf("failed to decode response：%w", err)
 	}
 
 	def.ensurePackageName()
@@ -325,20 +333,20 @@ func filterDefinition(def *apiDefinition, f *filter) *apiDefinition {
 	return def
 }
 
-func loadAPI(client *http.Client, host string, deprecated bool, internal bool, version string) (*apiDefinition, error) {
+func loadAPI(client *http.Client, host string, deprecated bool, internal bool, version string, auth string) (*apiDefinition, error) {
 	if client == nil {
 		client = http.DefaultClient
 	}
 
 	version, err := getTargetVersion(client, host, version)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to resolve target version")
+		return nil, fmt.Errorf("failed to resolve target version：%w", err)
 	}
 	parsedVersion := newVersion(version)
 
-	def, err := getDefinition(client, host, internal, parsedVersion)
+	def, err := getDefinition(client, host, auth, internal, parsedVersion)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to load definition")
+		return nil, fmt.Errorf("failed to load definition：%w", err)
 	}
 
 	filterDefinition(def, &filter{
