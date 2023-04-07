@@ -205,7 +205,7 @@ type param struct {
 }
 
 func (p *param) ParamName() string {
-	return makeExported(snakeToCamel(sanitizeItentifier(p.Key)))
+	return formatFieldName(makeExported(snakeToCamel(sanitizeItentifier(p.Key))))
 }
 
 func (p *param) Deprecated() bool {
@@ -249,8 +249,16 @@ func getTargetVersion(client *http.Client, host, version string) (string, error)
 	return version, nil
 }
 
-func getDefinition(client *http.Client, host string, internal bool, version *version) (*apiDefinition, error) {
-	resp, err := client.Get(url(host, internal))
+func getDefinition(client *http.Client, host string, auth string, internal bool, version *version) (*apiDefinition, error) {
+	req, _ := http.NewRequest("GET", url(host, internal), nil)
+	if auth != "" {
+		req.Header.Set("Authorization", auth)
+	}
+	resp, err := client.Do(req)
+	if resp.StatusCode == 401 {
+		return nil, errors.New("authorization failed to fetch api definitions")
+	}
+	// resp, err := client.Get(url(host, internal))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to fetch api definitions")
 	}
@@ -325,7 +333,7 @@ func filterDefinition(def *apiDefinition, f *filter) *apiDefinition {
 	return def
 }
 
-func loadAPI(client *http.Client, host string, deprecated bool, internal bool, version string) (*apiDefinition, error) {
+func loadAPI(client *http.Client, host string, deprecated bool, internal bool, version string, auth string) (*apiDefinition, error) {
 	if client == nil {
 		client = http.DefaultClient
 	}
@@ -336,7 +344,7 @@ func loadAPI(client *http.Client, host string, deprecated bool, internal bool, v
 	}
 	parsedVersion := newVersion(version)
 
-	def, err := getDefinition(client, host, internal, parsedVersion)
+	def, err := getDefinition(client, host, auth, internal, parsedVersion)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load definition")
 	}

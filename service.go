@@ -11,8 +11,8 @@ import (
 )
 
 const (
-	serviceTemplateName     = "service.gotxt"
-	serviceTemplateFileName = "./service.gotxt"
+	serviceTemplateName     = "service.tpl"
+	serviceTemplateFileName = "./tpl/service.tpl"
 )
 
 var (

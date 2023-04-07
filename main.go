@@ -18,6 +18,7 @@ var (
 	targetVersion string
 	help          bool
 	out           string
+	auth          string
 	packageName   string
 )
 
@@ -30,6 +31,7 @@ func parseFlags() {
 	mainFlagsSet.StringVar(&targetVersion, "target", "", "set target api version (default: server's version)")
 	mainFlagsSet.BoolVar(&help, "help", false, "show usage")
 	mainFlagsSet.StringVar(&out, "out", ".", "output directory")
+	mainFlagsSet.StringVar(&auth, "auth", "", "the header Authorization value,example: Basic YWRtaW46YWRtaW4=")
 	mainFlagsSet.StringVar(&packageName, "package", "", "package name, if not set will be sonarqube_client")
 	mainFlagsSet.Parse(os.Args[1:])
 	if help {
@@ -44,7 +46,7 @@ func main() {
 	var err error
 	var def *apiDefinition
 
-	if def, err = loadAPI(nil, host, deprecated, internal, targetVersion); err != nil {
+	if def, err = loadAPI(nil, host, deprecated, internal, targetVersion, auth); err != nil {
 		log.Fatal(err)
 	}
 

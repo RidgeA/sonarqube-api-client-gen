@@ -11,8 +11,8 @@ import (
 )
 
 const (
-	clientTemplateName     = "client.gotxt"
-	clientTemplateFileName = "./client.gotxt"
+	clientTemplateName     = "client.tpl"
+	clientTemplateFileName = "./tpl/client.tpl"
 	clientFileName         = clientTemplateName + ".go"
 )
 
