@@ -2,12 +2,11 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"go/format"
 	"io"
 	"log"
 	"text/template"
-
-	"github.com/pkg/errors"
 )
 
 const (
@@ -25,7 +24,7 @@ func renderClient(in io.Writer, data *apiDefinition) error {
 	buff := bytes.NewBuffer([]byte{})
 
 	if err := clientTemplate.Execute(buff, data); err != nil {
-		return errors.Wrapf(err, "failed to render client")
+		return fmt.Errorf("failed to render client: %w", err)
 	}
 
 	src := buff.Bytes()

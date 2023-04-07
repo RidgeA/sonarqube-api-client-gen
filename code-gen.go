@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/pkg/errors"
+	"fmt"
 	"os"
 )
 
@@ -12,14 +12,14 @@ const (
 func checkOutput(out string) error {
 	dir, err := os.Open(out)
 	if err != nil {
-		return errors.Wrapf(err, "failed to open target dir (%s)", out)
+		return fmt.Errorf("failed to open target dir (%s)：%w", out, err)
 	}
 	dirInfo, err := dir.Stat()
 	if err != nil {
-		return errors.Wrapf(err, "failed to open target dir (%s)", out)
+		return fmt.Errorf("failed to open target dir (%s)：%w", out, err)
 	}
 	if !dirInfo.IsDir() {
-		return errors.Errorf("target output is not a directory (%s)", dirInfo.Mode().String())
+		return fmt.Errorf("target output is not a directory (%s)：%w", dirInfo.Mode().String(), err)
 	}
 	return nil
 }
@@ -28,7 +28,7 @@ func getFileWriter(out, name string) (*os.File, error) {
 	path := out + "/" + name
 	file, err := os.Create(path)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create file")
+		return nil, fmt.Errorf("failed to create file：%w", err)
 	}
 	return file, nil
 }
@@ -43,7 +43,7 @@ func generateCode(def *apiDefinition, out string) error {
 
 	err := os.MkdirAll(path, targetDirPermission)
 	if err != nil {
-		return errors.Wrap(err, "cant create destination directory")
+		return fmt.Errorf("cant create destination directory：%w", err)
 	}
 
 	//create files for service
