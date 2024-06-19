@@ -7,7 +7,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// {{.Description | formatDescription }}
+// {{.ServiceName}} {{.Description | formatDescription }}
 {{- if .Since }}
 // Since : {{.Since}}
 {{- end}}
@@ -39,7 +39,7 @@ func New{{.ServiceName}} (client *Client) *{{.ServiceName}}{
 {{- end}}
 
 {{- define "action"}}
-// {{.Description | formatDescription }}
+// {{ .MethodName }} {{.Description | formatDescription }}
 {{- if .Since}}
 // Since {{.Since}}
 {{- end}}
@@ -76,8 +76,8 @@ type {{.RequestTypeName}} struct {
 {{- /* see https://github.com/golang/go/issues/18221#issuecomment-394255883 */}}
 {{- range .Params}}
 	// {{.Description | formatDescription }}
-	{{- if .Since }}
-	// Since {{.Since}}
+	{{- if .Since | formatSince }}
+	// Since {{ .Since | formatSince }}
 	{{- end}}
 	{{- if .Required}}
 	// Required
