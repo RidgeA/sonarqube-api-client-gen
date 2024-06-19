@@ -72,6 +72,7 @@ func (s *{{.ServiceName}}) {{.MethodName}} (ctx context.Context{{- if .Params}},
 {{- end}}
 
 {{- define "request"}}
+{{$post := .Post}}
 type {{.RequestTypeName}} struct {
 {{- /* see https://github.com/golang/go/issues/18221#issuecomment-394255883 */}}
 {{- range .Params}}
@@ -97,7 +98,7 @@ type {{.RequestTypeName}} struct {
 	{{- if .Deprecated}}
 	// Deprecated since {{.DeprecatedSince.String}}
 	{{- end }}
-	{{.ParamName}} *string {{tick}}json:"{{.Key}},omitempty" url:"{{.Key}},omitempty"{{tick}}
+	{{.ParamName}} string {{- if $post }} {{tick}}json:"{{.Key}}{{ if not .Required}},omitempty{{ end }}"{{tick}} {{- else}} {{tick}}url:"{{.Key}}{{ if not .Required}},omitempty{{ end }}"{{tick}} {{- end}}
 {{- end}}
 }
 {{- end}}
