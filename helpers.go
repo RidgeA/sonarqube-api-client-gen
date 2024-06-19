@@ -36,6 +36,10 @@ func tick() string {
 	return "`"
 }
 
+func formatSince(since version) string {
+	return since.String()
+}
+
 func replaceTags(str string) string {
 	repl := strings.NewReplacer(
 		"\n", "\n// ",
@@ -54,4 +58,5 @@ func replaceTags(str string) string {
 var templateHelpers = template.FuncMap{
 	"formatDescription": replaceTags,
 	"tick":              tick,
+	"formatSince":       formatSince,
 }

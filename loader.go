@@ -183,7 +183,7 @@ type change struct {
 }
 
 func (c *change) String() string {
-	return c.Version + ": " + c.Description
+	return c.Version + ": " + strings.ReplaceAll(c.Description, "\n", "")
 }
 
 type param struct {

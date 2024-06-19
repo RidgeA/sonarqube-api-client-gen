@@ -7,7 +7,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// {{.Description | formatDescription }}
+// {{.ServiceName}} {{.Description | formatDescription }}
 {{- if .Since }}
 // Since : {{.Since}}
 {{- end}}
@@ -39,7 +39,7 @@ func New{{.ServiceName}} (client *Client) *{{.ServiceName}}{
 {{- end}}
 
 {{- define "action"}}
-// {{.Description | formatDescription }}
+// {{ .MethodName }} {{.Description | formatDescription }}
 {{- if .Since}}
 // Since {{.Since}}
 {{- end}}
@@ -72,12 +72,13 @@ func (s *{{.ServiceName}}) {{.MethodName}} (ctx context.Context{{- if .Params}},
 {{- end}}
 
 {{- define "request"}}
+{{$post := .Post}}
 type {{.RequestTypeName}} struct {
 {{- /* see https://github.com/golang/go/issues/18221#issuecomment-394255883 */}}
 {{- range .Params}}
 	// {{.Description | formatDescription }}
-	{{- if .Since }}
-	// Since {{.Since}}
+	{{- if .Since | formatSince }}
+	// Since {{ .Since | formatSince }}
 	{{- end}}
 	{{- if .Required}}
 	// Required
@@ -97,7 +98,7 @@ type {{.RequestTypeName}} struct {
 	{{- if .Deprecated}}
 	// Deprecated since {{.DeprecatedSince.String}}
 	{{- end }}
-	{{.ParamName}} *string {{tick}}json:"{{.Key}},omitempty" url:"{{.Key}},omitempty"{{tick}}
+	{{.ParamName}} *string {{- if $post }} {{tick}}json:"{{.Key}}{{ if not .Required}},omitempty{{ end }}"{{tick}} {{- else}} {{tick}}url:"{{.Key}}{{ if not .Required}},omitempty{{ end }}"{{tick}} {{- end}}
 {{- end}}
 }
 {{- end}}

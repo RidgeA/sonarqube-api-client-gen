@@ -145,7 +145,10 @@ func (c *Client) invoke(ctx context.Context, post bool, url string, payload inte
 
 	req.Header.Set("content-type", "application/x-www-form-urlencoded")
 
-	req.SetBasicAuth(c.username, c.password)
+	if len(c.username) != 0 && len(c.password) != 0 {
+		req.SetBasicAuth(c.username, c.password)
+	}
+
 	req.WithContext(ctx)
 
 	resp, err := c.transport.Do(req)
