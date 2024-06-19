@@ -98,7 +98,7 @@ type {{.RequestTypeName}} struct {
 	{{- if .Deprecated}}
 	// Deprecated since {{.DeprecatedSince.String}}
 	{{- end }}
-	{{.ParamName}} string {{- if $post }} {{tick}}json:"{{.Key}}{{ if not .Required}},omitempty{{ end }}"{{tick}} {{- else}} {{tick}}url:"{{.Key}}{{ if not .Required}},omitempty{{ end }}"{{tick}} {{- end}}
+	{{.ParamName}} *string {{- if $post }} {{tick}}json:"{{.Key}}{{ if not .Required}},omitempty{{ end }}"{{tick}} {{- else}} {{tick}}url:"{{.Key}}{{ if not .Required}},omitempty{{ end }}"{{tick}} {{- end}}
 {{- end}}
 }
 {{- end}}
