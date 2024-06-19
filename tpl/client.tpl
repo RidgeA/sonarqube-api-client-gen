@@ -159,7 +159,7 @@ func (c *Client) invoke(ctx context.Context, post bool, url string, payload inte
 {{- end}}
 
 {{- define "getter"}}
-// {{.Description}}
+// {{.Getter}} {{.Description}}
 {{- if .Since }}
 // Since : {{.Since}}
 {{- end}}
@@ -174,7 +174,7 @@ func (c *Client) {{.Getter}}() *{{.ServiceName}} {
 }
 {{- end}}
 
-// Helper function to convert string to pointer to string
+// String Helper function to convert string to pointer to string
 func String(v string) *string {
 	p := new(string)
 	*p = v
