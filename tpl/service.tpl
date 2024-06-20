@@ -22,6 +22,18 @@ type {{.ServiceName}} struct {
 	url string
 }
 
+
+{{- if .Deprecated }}
+// Deprecated
+{{- end}}
+func New{{.ServiceName}} (client *Client) *{{.ServiceName}}{
+	s := &{{.ServiceName}}{
+		client: client,
+		url: "{{.Path}}",
+	}
+	return s
+}
+
 {{- range $index, $element := .Actions}}
 {{ template "action" $element}}
 {{- end}}
@@ -42,16 +54,20 @@ type {{.ServiceName}} struct {
 //
 // Deprecated since {{.DeprecatedSince}}
 {{- end}}
-func (s *{{.ServiceName}}) {{.MethodName}} (ctx context.Context{{- if .Params}}, request *{{.RequestTypeName}}{{- end}}) (*http.Response, error) {
+func (s *{{.ServiceName}}) {{.MethodName}} (ctx context.Context{{- if .Params}}, request *{{.RequestTypeName}}{{- end}}) (*{{.ResponseTypeName}}, error) {
 	resp, err := s.client.invoke(ctx, {{.Post}}, s.url + "/" + "{{.Key}}", {{- if .Params}} request {{- else}} nil {{- end}})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to call {{.ServiceName}}.{{.MethodName}}")
 	}
-	return resp, nil
+	return &{{.ResponseTypeName}}{
+		Response: resp,
+	}, nil
 }
 {{- if .Params }}
 {{ template "request" .}}
 {{- end}}
+
+{{ template "response" .}}
 
 {{- end}}
 
@@ -84,5 +100,11 @@ type {{.RequestTypeName}} struct {
 	{{- end }}
 	{{.ParamName}} *string {{- if $post }} {{tick}}json:"{{.Key}}{{ if not .Required}},omitempty{{ end }}"{{tick}} {{- else}} {{tick}}url:"{{.Key}}{{ if not .Required}},omitempty{{ end }}"{{tick}} {{- end}}
 {{- end}}
+}
+{{- end}}
+
+{{- define "response"}}
+type {{.ResponseTypeName}} struct {
+	*http.Response
 }
 {{- end}}

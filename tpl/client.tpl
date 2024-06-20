@@ -19,6 +19,9 @@ type Client struct {
 	username string
 	password string
 	transport *http.Client
+{{- range .WebServices}}
+	{{.Variable}} *{{.ServiceName}}
+{{- end }}
 }
 
 type httpErrorResponse struct {
@@ -98,6 +101,10 @@ func NewClient(httpClient *http.Client, host, username, password string) *Client
 		password: password,
 	}
 
+{{- range .WebServices}}
+	c.{{.Variable}} = New{{.ServiceName}}(c)
+{{- end }}
+
 	return c
 }
 
@@ -170,7 +177,7 @@ func (c *Client) invoke(ctx context.Context, post bool, url string, payload inte
 // Internal
 {{- end}}
 func (c *Client) {{.Getter}}() *{{.ServiceName}} {
-	return &{{.ServiceName}}{client: c, url: "{{.Path}}"}
+	return c.{{.Variable}}
 }
 {{- end}}
 
