@@ -22,6 +22,10 @@ func renderService(in io.Writer, data *webService) error {
 
 	buff := bytes.NewBuffer([]byte{})
 
+	if len(templateDir) != 0 {
+		serviceTemplate = template.Must(template.New(serviceTemplateName).Funcs(templateHelpers).ParseFiles(fmt.Sprintf("./%s/%s", templateDir, "service.tpl")))
+	}
+
 	if err := serviceTemplate.Execute(buff, data); err != nil {
 		return fmt.Errorf("failed to render service %s：%w", data.ServiceName(), err)
 	}

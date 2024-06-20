@@ -23,6 +23,10 @@ func renderClient(in io.Writer, data *apiDefinition) error {
 
 	buff := bytes.NewBuffer([]byte{})
 
+	if len(templateDir) != 0 {
+		clientTemplate = template.Must(template.New(clientTemplateName).Funcs(templateHelpers).ParseFiles(fmt.Sprintf("./%s/%s", templateDir, "client.tpl")))
+	}
+
 	if err := clientTemplate.Execute(buff, data); err != nil {
 		return fmt.Errorf("failed to render client: %w", err)
 	}
