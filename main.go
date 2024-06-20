@@ -20,6 +20,7 @@ var (
 	out           string
 	auth          string
 	packageName   string
+	templateDir   string
 )
 
 var mainFlagsSet = flag.NewFlagSet("", flag.PanicOnError)
@@ -33,6 +34,7 @@ func parseFlags() {
 	mainFlagsSet.StringVar(&out, "out", ".", "output directory")
 	mainFlagsSet.StringVar(&auth, "auth", "", "the header Authorization value,example: Basic YWRtaW46YWRtaW4=")
 	mainFlagsSet.StringVar(&packageName, "package", "", "package name, if not set will be sonarqube_client")
+	mainFlagsSet.StringVar(&templateDir, "template", "tpl", "template directory")
 	mainFlagsSet.Parse(os.Args[1:])
 	if help {
 		mainFlagsSet.Usage()
